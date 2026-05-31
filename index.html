@@ -44,6 +44,7 @@
   header .pkg{font-size:11px;color:var(--ink-dim);}
   header .pkg b{color:var(--ink);font-weight:600;}
   main{flex:1;display:flex;gap:14px;padding:14px;align-items:flex-start;min-height:0;}
+  main[hidden]{display:none;}
   .stage-wrap{
     position:relative;flex:1;min-width:0;
     border:1px solid var(--line);border-radius:6px;overflow:hidden;
@@ -139,6 +140,22 @@
     font-family:var(--mono);font-size:11px;padding:7px 8px;border-radius:5px;cursor:pointer;
   }
   .sel:focus{outline:none;border-color:var(--accent-dim);}
+  .modetabs{display:flex;border:1px solid var(--line);border-radius:5px;overflow:hidden;}
+  .modetabs button{
+    background:transparent;border:0;color:var(--ink-dim);font-family:var(--mono);
+    font-size:11px;letter-spacing:.16em;padding:6px 16px;cursor:pointer;transition:.12s;
+  }
+  .modetabs button.on{background:var(--accent);color:#000;font-weight:700;}
+  .seg-sm button{font-size:9.5px;letter-spacing:.02em;padding:7px 2px;}
+  .thumbs{display:flex;flex-wrap:wrap;gap:4px;min-height:8px;}
+  .thumbs .th{
+    width:38px;height:48px;border:1px solid var(--line);border-radius:3px;background:#0a0e15
+      center/contain no-repeat;position:relative;
+  }
+  .thumbs .th span{
+    position:absolute;top:0;left:0;font-size:8px;color:var(--ink-faint);background:#000a;padding:0 2px;border-radius:0 0 3px 0;
+  }
+  .thumbs .empty{font-size:10.5px;color:var(--ink-faint);}
 </style>
 </head>
 <body>
@@ -146,10 +163,15 @@
     <span class="mark">◢ MOVEMENT LAB</span>
     <span class="sub">character test harness</span>
     <span class="spacer"></span>
+    <div class="modetabs" id="modeTabs">
+      <button data-mode="lab" class="on">LAB</button>
+      <button data-mode="studio">STUDIO</button>
+    </div>
+    <span class="spacer"></span>
     <span class="pkg">package: <b id="pkgName">greybox_actor</b> · v0.1</span>
   </header>
 
-  <main>
+  <main id="labView">
     <div class="stage-wrap">
       <canvas id="cv" width="960" height="540"></canvas>
       <div class="hud" id="hud"></div>
@@ -246,6 +268,95 @@
             <button class="btn" id="btnReset">RESET POS</button>
             <button class="btn" id="btnDefaults">DEFAULTS</button>
           </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <main id="studioView" hidden>
+    <div class="stage-wrap">
+      <canvas id="pv" width="960" height="540"></canvas>
+      <div class="hud" id="pvHud"></div>
+      <div class="legend">
+        <span>STUDIO preview — action <b id="pvAction">walk</b></span>
+        <span>import frames → assign to an action → set its drive → test in <b>LAB</b></span>
+      </div>
+    </div>
+
+    <aside class="panel">
+      <div class="card">
+        <h3>Action <span class="tag">what to author</span></h3>
+        <div class="body">
+          <div class="seg seg-sm" id="actionSel">
+            <button data-a="idle">IDLE</button>
+            <button data-a="walk" class="on">WALK</button>
+            <button data-a="run">RUN</button>
+            <button data-a="jump">JUMP</button>
+            <button data-a="fall">FALL</button>
+          </div>
+          <p class="note" id="actionInfo">Pick an action, import its frames, choose how it's driven.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Frames <span class="tag"><span id="frameCount">0</span> frames</span></h3>
+        <div class="body">
+          <button class="btn" id="btnImportFrames">IMPORT FRAMES…</button>
+          <input type="file" id="frameFiles" accept="image/png,image/*" multiple hidden>
+          <div class="thumbs" id="thumbs"></div>
+          <button class="btn" id="btnClearFrames">CLEAR THIS ACTION</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Drive <span class="tag">how it plays</span></h3>
+        <div class="body">
+          <div class="seg" id="driveSel">
+            <button data-d="distance">DISTANCE</button>
+            <button data-d="time">TIME</button>
+            <button data-d="static">STATIC</button>
+          </div>
+          <div class="ctrl" id="strideCtrl">
+            <div class="lab"><span class="name">stride (px/cycle)</span><span class="num" id="vStride">130</span></div>
+            <input type="range" id="sStride" min="40" max="500" step="2" value="130">
+          </div>
+          <div class="ctrl" id="fpsCtrl">
+            <div class="lab"><span class="name">fps</span><span class="num" id="vFps">6</span></div>
+            <input type="range" id="sFps" min="1" max="24" step="1" value="6">
+          </div>
+          <div class="toggles"><div class="tog on" id="loopTog"><span class="name">loop</span><span class="pill"></span></div></div>
+          <p class="note">Locomotion (walk/run) → <b>distance</b> (stride-locked, no skate). Idle → <b>time</b>. Jump/fall → <b>static</b> pose.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Placement <span class="tag">seat on hitbox</span></h3>
+        <div class="body">
+          <div class="ctrl">
+            <div class="lab"><span class="name">sprite height (px)</span><span class="num" id="vSize">106</span></div>
+            <input type="range" id="sSize" min="40" max="220" step="1" value="106">
+          </div>
+          <div class="ctrl">
+            <div class="lab"><span class="name">anchor nudge X</span><span class="num" id="vOffX">0</span></div>
+            <input type="range" id="sOffX" min="-24" max="24" step="1" value="0">
+          </div>
+          <div class="ctrl">
+            <div class="lab"><span class="name">anchor nudge Y</span><span class="num" id="vOffY">0</span></div>
+            <input type="range" id="sOffY" min="-24" max="24" step="1" value="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Character <span class="tag">save / load</span></h3>
+        <div class="body">
+          <div class="rowbtns">
+            <button class="btn" id="btnSaveChar">SAVE .JSON</button>
+            <button class="btn" id="btnLoadChar">LOAD .JSON</button>
+          </div>
+          <button class="btn" id="btnExportAtlas">EXPORT ATLAS (png+json)</button>
+          <input type="file" id="charFile" accept="application/json,.json" hidden>
+          <p class="note" id="studioMsg">Save bundles movement + appearance in one self-contained .json. Export atlas writes the game-standard png+json pair.</p>
         </div>
       </div>
     </aside>
@@ -620,7 +731,7 @@ function draw(){
   drawFallZone();
 
   if(debug.plants) drawPlantTicks();
-  drawActor(actor);
+  if(!drawSprite(ctx, actor)) drawActor(actor);   // sprite if appearance has frames, else greybox
   if(debug.probes) drawProbes(actor);
   if(debug.vel) drawVel(actor);
 
@@ -794,9 +905,13 @@ function perf(){ return performance.now()-_t0; }
 function frame(now){
   const dt=now-last; last=now;
   fps = fps*0.9 + (1000/Math.max(dt,1))*0.1;
-  const steps = debug.slowmo ? (Math.random()<0.35?1:0) : 1; // crude slow-mo
-  for(let i=0;i<steps;i++) stepSim();
-  draw();
+  if(MODE==="studio"){
+    drawPreview();                                   // STUDIO: render the action preview
+  } else {
+    const steps = debug.slowmo ? (Math.random()<0.35?1:0) : 1; // crude slow-mo
+    for(let i=0;i<steps;i++) stepSim();
+    draw();
+  }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
@@ -950,6 +1065,242 @@ fileImport.addEventListener('change', e=>{
 document.getElementById('btnDefaults').addEventListener('click', ()=> applyPackage(activeChar));
 
 document.getElementById('pkgName').textContent = activeChar.name;
+
+/* ===========================================================================
+   STUDIO — animation authoring (Phase 1)
+   A character's APPEARANCE: frames grouped into actions, each action driven by
+   distance (stride-locked locomotion), time (fps loop), or a static pose. Frames
+   are imported as transparent PNGs, trimmed + foot-registered into a uniform cell
+   in-browser, and rendered in LAB by the actor's state. All in-memory + file-based.
+   =========================================================================== */
+let MODE = "lab";
+const APP = {
+  actions: {
+    idle: { frames:[], drive:"time",     fps:6,  loop:true,  stride:130 },
+    walk: { frames:[], drive:"distance", fps:8,  loop:true,  stride:130 },
+    run:  { frames:[], drive:"distance", fps:10, loop:true,  stride:210 },
+    jump: { frames:[], drive:"static",   fps:8,  loop:false, stride:130 },
+    fall: { frames:[], drive:"static",   fps:8,  loop:false, stride:130 }
+  },
+  order: ["idle","walk","run","jump","fall"],
+  cellW:0, cellH:0, anchorX:0, anchorY:0, figureH:1,
+  spriteH:106, offX:0, offY:0,
+  selected:"walk"
+};
+const hasFrames = ()=> APP.order.some(k=>APP.actions[k].frames.length>0);
+const allFrames = ()=>{ const a=[]; for(const k of APP.order) for(const f of APP.actions[k].frames) a.push(f); return a; };
+
+/* ---- import: trim alpha bbox + foot-anchor a frame ---- */
+function fileToImage(file){ return new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(file); }); }
+function trimToFrame(img){
+  const w=img.naturalWidth, h=img.naturalHeight;
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  const g=c.getContext('2d'); g.drawImage(img,0,0);
+  const d=g.getImageData(0,0,w,h).data;
+  let x0=w,y0=h,x1=-1,y1=-1;
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){ if(d[(y*w+x)*4+3]>24){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; } }
+  if(x1<0) return null;
+  const cw=x1-x0+1, ch=y1-y0+1;
+  const crop=document.createElement('canvas'); crop.width=cw; crop.height=ch;
+  crop.getContext('2d').drawImage(c, x0,y0,cw,ch, 0,0,cw,ch);
+  const cd=crop.getContext('2d').getImageData(0,0,cw,ch).data;
+  const band=Math.max(2,Math.floor(ch*0.08)); let sum=0,cnt=0;
+  for(let y=ch-band;y<ch;y++) for(let x=0;x<cw;x++){ if(cd[(y*cw+x)*4+3]>24){ sum+=x; cnt++; } }
+  return { crop, ax: cnt? sum/cnt : cw/2, cw, ch, _cell:null };
+}
+/* recompute the shared cell + foot anchor from ALL frames, build registered cells */
+function reregister(){
+  const fs=allFrames(); if(!fs.length){ APP.cellW=APP.cellH=0; return; }
+  const pad=6; let half=0, hMax=0;
+  for(const f of fs){ half=Math.max(half,f.ax,f.cw-f.ax); hMax=Math.max(hMax,f.ch); }
+  APP.cellW=Math.ceil(half*2)+pad*2; APP.cellH=Math.ceil(hMax)+pad*2;
+  APP.anchorX=APP.cellW/2; APP.anchorY=APP.cellH-pad; APP.figureH=hMax;
+  for(const f of fs){
+    const cell=document.createElement('canvas'); cell.width=APP.cellW; cell.height=APP.cellH;
+    cell.getContext('2d').drawImage(f.crop, Math.round(APP.anchorX-f.ax), Math.round(APP.anchorY-f.ch));
+    f._cell=cell;
+  }
+}
+async function importFrames(files){
+  const act=APP.actions[APP.selected];
+  for(const f of files){ try{ const im=await fileToImage(f); const fr=trimToFrame(im); if(fr) act.frames.push(fr); }catch(e){} }
+  reregister(); refreshStudioUI();
+  studioMsg('imported '+files.length+' → '+APP.selected, false);
+}
+
+/* ---- draw one registered cell so its foot anchor lands at (cxw, footYw) ---- */
+function blitFrame(g, cell, cxw, footYw, facing){
+  const scale=APP.spriteH/APP.figureH;
+  const dw=APP.cellW*scale, dh=APP.cellH*scale;
+  const dx=cxw-APP.anchorX*scale+APP.offX, dy=footYw-APP.anchorY*scale+APP.offY;
+  g.save(); g.imageSmoothingEnabled=true; g.imageSmoothingQuality="high";
+  if(facing<0){ g.translate(cxw,0); g.scale(-1,1); g.translate(-cxw,0); }
+  g.drawImage(cell, dx, dy, dw, dh); g.restore();
+}
+function pickIndex(act, dist){
+  const n=act.frames.length; if(!n) return -1;
+  if(act.drive==="distance"){ const s=act.stride||130; return ((Math.floor(dist/s*n)%n)+n)%n; }
+  if(act.drive==="time"){ const fps=act.fps||6; let i=Math.floor(perf()/(1000/fps)); return act.loop?((i%n)+n)%n:Math.min(i,n-1); }
+  return 0; // static
+}
+/* LAB: render the actor's sprite for its state; false -> caller draws greybox */
+function drawSprite(g, a){
+  if(!hasFrames()) return false;
+  let name=a.state; if(name==="hang") name="fall";
+  let act=APP.actions[name];
+  if(!act || !act.frames.length) act=APP.actions.idle;
+  if(!act || !act.frames.length) return false;
+  const idx=pickIndex(act, a.dist); const cell=act.frames[idx] && act.frames[idx]._cell;
+  if(!cell) return false;
+  blitFrame(g, cell, a.x+a.w/2, a.y+a.h, a.facing);
+  if(debug.hitbox){ const ins=activeChar.hitbox.inset; g.strokeStyle="rgba(70,214,160,.8)"; g.lineWidth=1; g.setLineDash([4,3]); g.strokeRect(a.x+ins+.5,a.y+ins+.5,a.w-ins*2-1,a.h-ins*2-1); g.setLineDash([]); }
+  return true;
+}
+
+/* ---- STUDIO preview ---- */
+let pvCtx=null, pvPhase=0;
+function drawPreview(){
+  if(!pvCtx) pvCtx=document.getElementById('pv').getContext('2d');
+  const g=pvCtx;
+  g.fillStyle="#0a0e15"; g.fillRect(0,0,960,540);
+  const groundY=400, cxw=480;
+  g.strokeStyle="rgba(79,185,224,.22)"; g.lineWidth=1;
+  g.beginPath(); g.moveTo(120,groundY); g.lineTo(840,groundY); g.stroke();
+  const act=APP.actions[APP.selected];
+  document.getElementById('pvAction').textContent=APP.selected;
+  if(!act.frames.length){
+    g.fillStyle="#3c4a5c"; g.font="13px ui-monospace,monospace"; g.textAlign="center";
+    g.fillText("no frames for “"+APP.selected+"” — IMPORT FRAMES…", cxw, groundY-40); g.textAlign="left";
+    return;
+  }
+  let idx;
+  if(act.drive==="time"){ idx=pickIndex(act,0); }
+  else if(act.drive==="static"){ idx=0; }
+  else { pvPhase=(pvPhase+0.018)%1; idx=Math.floor(pvPhase*act.frames.length)%act.frames.length; } // distance: gentle steady preview
+  // reference hitbox
+  const hw=activeChar.size.w, hh=activeChar.size.h;
+  g.strokeStyle="rgba(70,214,160,.5)"; g.setLineDash([4,3]);
+  g.strokeRect(cxw-hw/2+.5, groundY-hh+.5, hw-1, hh-1); g.setLineDash([]);
+  blitFrame(g, act.frames[idx]._cell, cxw, groundY, 1);
+  // tiny readout
+  g.fillStyle="#6b7c91"; g.font="11px ui-monospace,monospace";
+  g.fillText("frame "+(idx+1)+"/"+act.frames.length+"  ·  "+act.drive, 130, groundY+24);
+}
+
+/* ----------------------------- STUDIO UI ---------------------------------- */
+const studioMsgEl=document.getElementById('studioMsg');
+function studioMsg(t,err){ studioMsgEl.textContent=t; studioMsgEl.style.color=err?"var(--bad)":"var(--good)"; }
+function setSeg(container, val, attr){ document.querySelectorAll('#'+container+' button').forEach(b=>b.classList.toggle('on', b.dataset[attr]===val)); }
+
+function refreshStudioUI(){
+  const act=APP.actions[APP.selected];
+  setSeg('actionSel', APP.selected, 'a');
+  setSeg('driveSel', act.drive, 'd');
+  document.getElementById('frameCount').textContent=act.frames.length;
+  // thumbnails
+  const t=document.getElementById('thumbs'); t.innerHTML='';
+  if(!act.frames.length){ const e=document.createElement('div'); e.className='empty'; e.textContent='— none —'; t.appendChild(e); }
+  act.frames.forEach((f,i)=>{ const d=document.createElement('div'); d.className='th'; d.style.backgroundImage='url('+f._cell.toDataURL()+')'; d.innerHTML='<span>'+(i+1)+'</span>'; t.appendChild(d); });
+  // drive controls
+  document.getElementById('strideCtrl').style.display = act.drive==='distance'?'flex':'none';
+  document.getElementById('fpsCtrl').style.display = act.drive==='time'?'flex':'none';
+  document.getElementById('sStride').value=act.stride; document.getElementById('vStride').textContent=act.stride;
+  document.getElementById('sFps').value=act.fps; document.getElementById('vFps').textContent=act.fps;
+  document.getElementById('loopTog').classList.toggle('on', !!act.loop);
+  // placement
+  document.getElementById('sSize').value=APP.spriteH; document.getElementById('vSize').textContent=APP.spriteH;
+  document.getElementById('sOffX').value=APP.offX; document.getElementById('vOffX').textContent=APP.offX;
+  document.getElementById('sOffY').value=APP.offY; document.getElementById('vOffY').textContent=APP.offY;
+}
+
+/* mode tabs */
+document.querySelectorAll('#modeTabs button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    MODE=b.dataset.mode;
+    document.querySelectorAll('#modeTabs button').forEach(x=>x.classList.toggle('on', x===b));
+    document.getElementById('labView').hidden = MODE!=='lab';
+    document.getElementById('studioView').hidden = MODE!=='studio';
+    if(MODE==='studio') refreshStudioUI();
+  });
+});
+/* action selector */
+document.querySelectorAll('#actionSel button').forEach(b=>{
+  b.addEventListener('click', ()=>{ APP.selected=b.dataset.a; refreshStudioUI(); });
+});
+/* drive selector */
+document.querySelectorAll('#driveSel button').forEach(b=>{
+  b.addEventListener('click', ()=>{ APP.actions[APP.selected].drive=b.dataset.d; refreshStudioUI(); });
+});
+document.getElementById('sStride').addEventListener('input', e=>{ APP.actions[APP.selected].stride=parseFloat(e.target.value); document.getElementById('vStride').textContent=e.target.value; });
+document.getElementById('sFps').addEventListener('input', e=>{ APP.actions[APP.selected].fps=parseFloat(e.target.value); document.getElementById('vFps').textContent=e.target.value; });
+document.getElementById('loopTog').addEventListener('click', ()=>{ const a=APP.actions[APP.selected]; a.loop=!a.loop; document.getElementById('loopTog').classList.toggle('on', a.loop); });
+document.getElementById('sSize').addEventListener('input', e=>{ APP.spriteH=parseFloat(e.target.value); document.getElementById('vSize').textContent=e.target.value; });
+document.getElementById('sOffX').addEventListener('input', e=>{ APP.offX=parseFloat(e.target.value); document.getElementById('vOffX').textContent=e.target.value; });
+document.getElementById('sOffY').addEventListener('input', e=>{ APP.offY=parseFloat(e.target.value); document.getElementById('vOffY').textContent=e.target.value; });
+/* frame import / clear */
+const frameFiles=document.getElementById('frameFiles');
+document.getElementById('btnImportFrames').addEventListener('click', ()=> frameFiles.click());
+frameFiles.addEventListener('change', e=>{ if(e.target.files.length) importFrames([...e.target.files]); e.target.value=''; });
+document.getElementById('btnClearFrames').addEventListener('click', ()=>{ APP.actions[APP.selected].frames=[]; reregister(); refreshStudioUI(); studioMsg('cleared '+APP.selected, false); });
+
+/* ---- appearance (de)serialization ---- */
+function serializeAppearance(){
+  if(!hasFrames()) return null;
+  const flat=[], actions={};
+  for(const name of APP.order){ const act=APP.actions[name]; const idxs=[]; for(const f of act.frames){ idxs.push(flat.length); flat.push(f); } actions[name]={frames:idxs, drive:act.drive, fps:act.fps, stride:act.stride, loop:act.loop}; }
+  const strip=document.createElement('canvas'); strip.width=APP.cellW*flat.length; strip.height=APP.cellH;
+  const g=strip.getContext('2d'); flat.forEach((f,i)=> g.drawImage(f._cell, i*APP.cellW, 0));
+  return { cellW:APP.cellW, cellH:APP.cellH, anchorX:APP.anchorX, anchorY:APP.anchorY, figureH:APP.figureH, spriteH:APP.spriteH, offX:APP.offX, offY:APP.offY, frameCount:flat.length, actions, atlas:strip.toDataURL('image/png') };
+}
+function loadAppearance(ap){
+  return new Promise(res=>{
+    if(!ap){ for(const k of APP.order) APP.actions[k].frames=[]; reregister(); res(); return; }
+    const img=new Image();
+    img.onload=()=>{
+      APP.cellW=ap.cellW; APP.cellH=ap.cellH; APP.anchorX=ap.anchorX; APP.anchorY=ap.anchorY; APP.figureH=ap.figureH||1;
+      APP.spriteH=ap.spriteH||106; APP.offX=ap.offX||0; APP.offY=ap.offY||0;
+      const cells=[];
+      for(let i=0;i<ap.frameCount;i++){ const c=document.createElement('canvas'); c.width=ap.cellW; c.height=ap.cellH; c.getContext('2d').drawImage(img, i*ap.cellW,0,ap.cellW,ap.cellH, 0,0,ap.cellW,ap.cellH); cells.push(c); }
+      for(const name of APP.order){
+        const a=ap.actions&&ap.actions[name]; const act=APP.actions[name];
+        if(a){ act.drive=a.drive; act.fps=a.fps; act.stride=a.stride; act.loop=a.loop;
+          act.frames=(a.frames||[]).map(i=>({ crop:cells[i], ax:ap.anchorX, cw:ap.cellW, ch:ap.cellH, _cell:cells[i] })); }
+        else act.frames=[];
+      }
+      refreshStudioUI(); res();
+    };
+    img.src=ap.atlas;
+  });
+}
+
+/* save = movement + appearance in one self-contained .json */
+function download(name, blob){ const u=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(u); }
+document.getElementById('btnSaveChar').addEventListener('click', ()=>{
+  const bundle=currentPackage(); bundle.appearance=serializeAppearance();
+  download((bundle.name||'character')+'.json', new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'}));
+  studioMsg('saved '+(bundle.name||'character')+'.json', false);
+});
+const charFile=document.getElementById('charFile');
+document.getElementById('btnLoadChar').addEventListener('click', ()=> charFile.click());
+charFile.addEventListener('change', e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=async ()=>{ try{ const j=JSON.parse(r.result); applyPackage(validatePackage(j)); await loadAppearance(j.appearance||null); studioMsg('loaded '+(j.name||'character'), false); }catch(err){ studioMsg('load failed: '+err.message, true); } };
+  r.readAsText(f); e.target.value='';
+});
+/* game export: atlas.png + atlas.json pair */
+document.getElementById('btnExportAtlas').addEventListener('click', ()=>{
+  const ap=serializeAppearance(); if(!ap){ studioMsg('no frames to export', true); return; }
+  const base=(activeChar.name||'character');
+  // atlas.png
+  fetch(ap.atlas).then(r=>r.blob()).then(b=> download(base+'.atlas.png', b));
+  // atlas.json (references the png; image data stripped)
+  const meta={ image:base+'.atlas.png', cellW:ap.cellW, cellH:ap.cellH, anchorX:ap.anchorX, anchorY:ap.anchorY, figureH:ap.figureH, spriteH:ap.spriteH, offX:ap.offX, offY:ap.offY, frameCount:ap.frameCount, actions:ap.actions };
+  download(base+'.atlas.json', new Blob([JSON.stringify(meta,null,2)],{type:'application/json'}));
+  studioMsg('exported '+base+'.atlas.png + .json', false);
+});
+
+refreshStudioUI();
 </script>
 </body>
 </html>
