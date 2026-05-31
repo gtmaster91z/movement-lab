@@ -13,17 +13,30 @@ meant to be exported and imported into games.
 - **No build step, no framework, no bundler.** It must run by opening `index.html`.
 - **Self-contained & offline.** No network calls, no CDN imports, no `localStorage`/
   `sessionStorage`. All assets/state embedded or in-memory.
-- **Feel lives in a labeled constants block** (`CHARACTER` + the live mirror `P`).
+- **Persistence is file-based, not network/storage.** Characters save and load as
+  JSON packages via user-initiated download (export) and a file picker (import) —
+  that's the allowed persistence model. Do NOT add auto-saving browser storage or a
+  backend without an explicit, deliberate decision to break the offline rule.
+- **Never `fetch()` a character at startup.** Browsers block `fetch()` on `file://`,
+  so loading a character over the network would break local double-click use. Built-in
+  characters live EMBEDDED in `index.html` (`PRESETS`); external ones come in through
+  the import file picker. The `characters/*.json` files are version-controlled
+  artifacts/references, not runtime-fetched.
+- **Feel lives in a labeled constants block** (`PRESETS` / `activeChar` + the live
+  mirror `P`).
 - **Greybox first.** Shapes for mechanics; art is swapped in only at the draw layer.
 - **Hitboxes are code, not art** — defined in code, inset from the visual.
 - **Pixel art, if any, renders crisp:** `ctx.imageSmoothingEnabled = false`.
 
 ## The two load-bearing ideas — preserve them in any change
-1. **Character package** (`CHARACTER`): a character is data the actor reads from —
-   `size`, `hitbox`, `movement` (runSpeed, accel, friction, airControl, gravity,
-   jumpPower, jumpCut, maxFall, coyoteFrames, bufferFrames), and `anim` (mode,
-   stepDistance, cadence, footLift, legLen). The actor must not hardcode values that
-   belong in the package.
+1. **Character package** (`PRESETS` entries / `activeChar`): a character is data the
+   actor reads from — `size`, `hitbox`, `movement` (runSpeed, accel, friction,
+   airControl, gravity, jumpPower, jumpCut, maxFall, coyoteFrames, bufferFrames), and
+   `anim` (mode, stepDistance, cadence, footLift, legLen). The actor must not hardcode
+   values that belong in the package. `PRESETS` is the built-in library; `activeChar`
+   is the currently loaded package; `P` is the live mirror the sim reads each frame.
+   `applyPackage()` loads a package into the lab; `currentPackage()` + export writes
+   one back out; `validatePackage()` sanitizes/clamps anything imported.
 2. **Environment contract** (`ENV.query*`): the level exposes `queryGround`,
    `queryLedge`, `pastFallLine`, plus `solidsHit` / `platformsHit`. The character
    touches the world ONLY through these. Keeping this boundary clean is what makes
@@ -39,13 +52,18 @@ meant to be exported and imported into games.
   purely to demonstrate the skating failure. Distance-driven is correct.
 
 ## How to extend (typical future tasks)
-- **Add a character:** add a new package object in the package shape; let the actor
-  read from it. Eventually: load an exported `package.json` + sprite atlas.
+- **Add a character:** add a new entry to `PRESETS` (embedded) and/or import a JSON
+  package at runtime. Keep a version-controlled copy under `characters/`.
 - **Add an environment:** add a layout that satisfies the contract (`query*`). The
   character should work in it unchanged.
 - **Add a state:** extend the animation spec + state machine (e.g. `land`, `dash`).
-- **Export path (planned):** a character = `package.json` (this shape) + a sprite
-  atlas (`atlas.png` + `atlas.json`). A game imports it by satisfying the contract.
+- **Add an ability (planned — Step 2):** mechanics like double-jump or dash are NOT
+  just numbers — extend the package with an `abilities` block (flags/counts) AND teach
+  the actor's state machine the mechanic, gated by those flags. Data-driven tuning is
+  easy; a new mechanic needs actor code that the package then switches on/off.
+- **Export path:** JSON-package export/import is DONE. Still planned: a sprite atlas
+  (`atlas.png` + `atlas.json`) so a character = `package.json` + atlas. A game imports
+  it by satisfying the contract.
 
 ## Workflow
 This repo — not any chat — is the source of truth for the lab. Make focused commits.

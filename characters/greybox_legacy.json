@@ -1,0 +1,29 @@
+{
+  "name": "greybox_actor",
+  "size": {
+    "w": 34,
+    "h": 64
+  },
+  "hitbox": {
+    "inset": 4
+  },
+  "movement": {
+    "runSpeed": 4.2,
+    "accel": 0.55,
+    "friction": 0.78,
+    "airControl": 0.32,
+    "gravity": 0.55,
+    "jumpPower": 11.5,
+    "jumpCut": 0.45,
+    "maxFall": 14,
+    "coyoteFrames": 6,
+    "bufferFrames": 6
+  },
+  "anim": {
+    "mode": "distance",
+    "stepDistance": 46,
+    "cadence": 0.13,
+    "footLift": 16,
+    "legLen": 26
+  }
+}

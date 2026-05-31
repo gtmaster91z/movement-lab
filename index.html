@@ -134,6 +134,11 @@
     font-family:var(--mono);font-size:11px;padding:8px;border-radius:5px;cursor:pointer;letter-spacing:.05em;
   }
   .btn:hover{border-color:var(--accent-dim);color:var(--accent);}
+  .sel{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+    font-family:var(--mono);font-size:11px;padding:7px 8px;border-radius:5px;cursor:pointer;
+  }
+  .sel:focus{outline:none;border-color:var(--accent-dim);}
 </style>
 </head>
 <body>
@@ -160,6 +165,25 @@
 
     <aside class="panel">
       <div class="card">
+        <h3>Package <span class="tag">character I/O</span></h3>
+        <div class="body">
+          <div class="ctrl">
+            <div class="lab"><span class="name">preset</span></div>
+            <select id="presetSel" class="sel">
+              <option value="basic">basic</option>
+              <option value="greybox_legacy">greybox_legacy</option>
+            </select>
+          </div>
+          <div class="rowbtns">
+            <button class="btn" id="btnExport">EXPORT .JSON</button>
+            <button class="btn" id="btnImport">IMPORT .JSON</button>
+          </div>
+          <input type="file" id="fileImport" accept="application/json,.json" hidden>
+          <p class="note" id="pkgMsg">A character is data. Tune it, <b>export</b> the package, re-<b>import</b> or drop it into a game.</p>
+        </div>
+      </div>
+
+      <div class="card">
         <h3>Animation <span class="tag">the smoothness knob</span></h3>
         <div class="body">
           <div class="seg" id="animMode">
@@ -168,12 +192,12 @@
           </div>
           <p class="note">Watch the <b>foot-plant ticks</b> on the ground. In <b>distance</b> mode the planted foot stays locked to the world — no skating. Flip to <b>time</b> and the feet slide because the stride no longer matches ground speed. This is what made her movement read as choppy.</p>
           <div class="ctrl">
-            <div class="lab"><span class="name">step distance</span><span class="num" id="vStep">46</span></div>
-            <input type="range" id="sStep" min="20" max="90" step="1" value="46">
+            <div class="lab"><span class="name">step distance</span><span class="num" id="vStep">40</span></div>
+            <input type="range" id="sStep" min="20" max="90" step="1" value="40">
           </div>
           <div class="ctrl">
-            <div class="lab"><span class="name">foot lift</span><span class="num" id="vLift">16</span></div>
-            <input type="range" id="sLift" min="4" max="34" step="1" value="16">
+            <div class="lab"><span class="name">foot lift</span><span class="num" id="vLift">8</span></div>
+            <input type="range" id="sLift" min="4" max="34" step="1" value="8">
           </div>
         </div>
       </div>
@@ -182,28 +206,28 @@
         <h3>Movement <span class="tag">feel constants</span></h3>
         <div class="body">
           <div class="ctrl">
-            <div class="lab"><span class="name">run speed</span><span class="num" id="vRun">4.2</span></div>
-            <input type="range" id="sRun" min="1.5" max="9" step="0.1" value="4.2">
+            <div class="lab"><span class="name">run speed</span><span class="num" id="vRun">4.5</span></div>
+            <input type="range" id="sRun" min="1.5" max="9" step="0.1" value="4.5">
           </div>
           <div class="ctrl">
-            <div class="lab"><span class="name">ground accel</span><span class="num" id="vAcc">0.55</span></div>
-            <input type="range" id="sAcc" min="0.1" max="2" step="0.05" value="0.55">
+            <div class="lab"><span class="name">ground accel</span><span class="num" id="vAcc">0.25</span></div>
+            <input type="range" id="sAcc" min="0.1" max="2" step="0.05" value="0.25">
           </div>
           <div class="ctrl">
-            <div class="lab"><span class="name">friction</span><span class="num" id="vFri">0.78</span></div>
-            <input type="range" id="sFri" min="0.5" max="0.97" step="0.01" value="0.78">
+            <div class="lab"><span class="name">friction</span><span class="num" id="vFri">0.92</span></div>
+            <input type="range" id="sFri" min="0.5" max="0.97" step="0.01" value="0.92">
           </div>
           <div class="ctrl">
-            <div class="lab"><span class="name">air control</span><span class="num" id="vAir">0.32</span></div>
-            <input type="range" id="sAir" min="0" max="1" step="0.02" value="0.32">
+            <div class="lab"><span class="name">air control</span><span class="num" id="vAir">0.80</span></div>
+            <input type="range" id="sAir" min="0" max="1" step="0.02" value="0.8">
           </div>
           <div class="ctrl">
-            <div class="lab"><span class="name">jump power</span><span class="num" id="vJmp">11.5</span></div>
-            <input type="range" id="sJmp" min="6" max="18" step="0.5" value="11.5">
+            <div class="lab"><span class="name">jump power</span><span class="num" id="vJmp">11.0</span></div>
+            <input type="range" id="sJmp" min="6" max="18" step="0.5" value="11">
           </div>
           <div class="ctrl">
-            <div class="lab"><span class="name">gravity</span><span class="num" id="vGrv">0.55</span></div>
-            <input type="range" id="sGrv" min="0.2" max="1.2" step="0.02" value="0.55">
+            <div class="lab"><span class="name">gravity</span><span class="num" id="vGrv">0.40</span></div>
+            <input type="range" id="sGrv" min="0.2" max="1.2" step="0.02" value="0.4">
           </div>
         </div>
       </div>
@@ -245,49 +269,73 @@
       the fall line?". Any environment that answers these can host any character.
    ========================================================================== */
 
-/* ----- THE CHARACTER PACKAGE (the portable, importable thing) -------------- */
-const CHARACTER = {
-  name: "greybox_actor",
-  size:   { w: 34, h: 64 },          // collision box, in world px
-  hitbox: { inset: 4 },              // gameplay hurtbox inset from the visual
-  movement: {
-    runSpeed: 4.2,
-    accel:    0.55,
-    friction: 0.78,                  // per-frame velocity retention when no input
-    airControl: 0.32,                // fraction of ground accel usable midair
-    gravity:  0.55,
-    jumpPower: 11.5,
-    jumpCut:  0.45,                   // velocity kept on early jump release (short hop)
-    maxFall:  14,
-    coyoteFrames: 6,                  // forgiveness: jump shortly after leaving ground
-    bufferFrames: 6                   // forgiveness: jump pressed shortly before landing
+/* ----- THE CHARACTER PACKAGE (the portable, importable thing) --------------
+   A character is data. PRESETS is the built-in library; each entry is a full,
+   self-describing package of the exact shape we export/import as JSON. They are
+   EMBEDDED (not fetched) so the lab still runs by double-clicking index.html —
+   browsers block fetch() on file://, so a character must never be loaded over
+   the network at startup. `activeChar` is whichever package is currently loaded
+   (preset selection or imported file); the live mirror P holds the tunable
+   values the sim actually reads each frame. */
+const PRESETS = {
+  // the working baseline: a basic, floaty-but-deliberate everyman character
+  basic: {
+    name: "basic",
+    size:   { w: 34, h: 64 },          // collision box, in world px
+    hitbox: { inset: 4 },              // gameplay hurtbox inset from the visual
+    movement: {
+      runSpeed: 4.5,
+      accel:    0.25,
+      friction: 0.92,                  // per-frame velocity retention when no input
+      airControl: 0.80,                // fraction of ground accel usable midair
+      gravity:  0.40,
+      jumpPower: 11.0,
+      jumpCut:  0.45,                   // velocity kept on early jump release (short hop)
+      maxFall:  14,
+      coyoteFrames: 6,                  // forgiveness: jump shortly after leaving ground
+      bufferFrames: 6                   // forgiveness: jump pressed shortly before landing
+    },
+    anim: {
+      mode: "distance",                 // "distance" | "time"
+      stepDistance: 40,                 // world px traveled per stride (distance mode)
+      cadence: 0.13,                    // gait phase / frame (time mode)
+      footLift: 8,
+      legLen: 26
+    }
   },
-  anim: {
-    mode: "distance",                 // "distance" | "time"
-    stepDistance: 46,                 // world px traveled per stride (distance mode)
-    cadence: 0.13,                    // gait phase / frame (time mode)
-    footLift: 16,
-    legLen: 26
+  // the original shipped feel, kept as a reference point
+  greybox_legacy: {
+    name: "greybox_actor",
+    size:   { w: 34, h: 64 },
+    hitbox: { inset: 4 },
+    movement: {
+      runSpeed: 4.2, accel: 0.55, friction: 0.78, airControl: 0.32, gravity: 0.55,
+      jumpPower: 11.5, jumpCut: 0.45, maxFall: 14, coyoteFrames: 6, bufferFrames: 6
+    },
+    anim: { mode: "distance", stepDistance: 46, cadence: 0.13, footLift: 16, legLen: 26 }
   }
 };
 
+/* the package currently loaded into the lab (default = basic baseline) */
+let activeChar = PRESETS.basic;
+
 /* live-tunable mirror (sliders write here; sim reads here) */
 const P = {
-  runSpeed: CHARACTER.movement.runSpeed,
-  accel:    CHARACTER.movement.accel,
-  friction: CHARACTER.movement.friction,
-  airControl: CHARACTER.movement.airControl,
-  gravity:  CHARACTER.movement.gravity,
-  jumpPower: CHARACTER.movement.jumpPower,
-  jumpCut:  CHARACTER.movement.jumpCut,
-  maxFall:  CHARACTER.movement.maxFall,
-  coyoteFrames: CHARACTER.movement.coyoteFrames,
-  bufferFrames: CHARACTER.movement.bufferFrames,
-  animMode: CHARACTER.anim.mode,
-  stepDistance: CHARACTER.anim.stepDistance,
-  cadence: CHARACTER.anim.cadence,
-  footLift: CHARACTER.anim.footLift,
-  legLen: CHARACTER.anim.legLen
+  runSpeed: activeChar.movement.runSpeed,
+  accel:    activeChar.movement.accel,
+  friction: activeChar.movement.friction,
+  airControl: activeChar.movement.airControl,
+  gravity:  activeChar.movement.gravity,
+  jumpPower: activeChar.movement.jumpPower,
+  jumpCut:  activeChar.movement.jumpCut,
+  maxFall:  activeChar.movement.maxFall,
+  coyoteFrames: activeChar.movement.coyoteFrames,
+  bufferFrames: activeChar.movement.bufferFrames,
+  animMode: activeChar.anim.mode,
+  stepDistance: activeChar.anim.stepDistance,
+  cadence: activeChar.anim.cadence,
+  footLift: activeChar.anim.footLift,
+  legLen: activeChar.anim.legLen
 };
 
 /* ----- THE ENVIRONMENT (greybox: just collision surfaces) ------------------ */
@@ -344,7 +392,7 @@ const ENV = (() => {
 
 /* ----- THE ACTOR (reads package + contract, owns its own state machine) ---- */
 const actor = {
-  x:ENV.spawn.x, y:ENV.spawn.y, w:CHARACTER.size.w, h:CHARACTER.size.h,
+  x:ENV.spawn.x, y:ENV.spawn.y, w:activeChar.size.w, h:activeChar.size.h,
   vx:0, vy:0, facing:1, grounded:false, state:"idle",
   coyote:0, buffer:0, dropTimer:0,
   hanging:false, hangLedge:null,
@@ -680,7 +728,7 @@ function drawActor(a){
 
   // hitbox overlay
   if(debug.hitbox){
-    const ins=CHARACTER.hitbox.inset;
+    const ins=activeChar.hitbox.inset;
     ctx.strokeStyle="rgba(70,214,160,.8)"; ctx.lineWidth=1; ctx.setLineDash([4,3]);
     ctx.strokeRect(a.x+ins+.5, a.y+ins+.5, a.w-ins*2-1, a.h-ins*2-1);
     ctx.setLineDash([]);
@@ -782,14 +830,126 @@ document.querySelectorAll('#toggles .tog').forEach(t=>{
 });
 
 document.getElementById('btnReset').addEventListener('click', resetPos);
-document.getElementById('btnDefaults').addEventListener('click', ()=>{
-  const m=CHARACTER.movement, an=CHARACTER.anim;
-  const set=(id,val)=>{ const e=document.getElementById(id); e.value=val; e.dispatchEvent(new Event('input')); };
-  set('sRun',m.runSpeed); set('sAcc',m.accel); set('sFri',m.friction); set('sAir',m.airControl);
-  set('sJmp',m.jumpPower); set('sGrv',m.gravity); set('sStep',an.stepDistance); set('sLift',an.footLift);
+
+/* -------------------- PACKAGE I/O (export / import / presets) --------------
+   Persistence is file-based on purpose: a character travels as a JSON package,
+   not as browser storage or a server record. This keeps the lab self-contained
+   and offline, and lets a tuned character drop straight into a game. --------- */
+function setSliderEl(id,val){ const e=document.getElementById(id); e.value=val; e.dispatchEvent(new Event('input')); }
+
+/* push a full package into the live lab: sliders, non-slider constants, anim
+   mode, actor body, identity. Reused by preset select, import, and DEFAULTS. */
+function applyPackage(pkg){
+  activeChar = pkg;
+  const m=pkg.movement, an=pkg.anim;
+  // slider-backed values (range inputs clamp to their own min/max automatically)
+  setSliderEl('sRun',m.runSpeed);  setSliderEl('sAcc',m.accel);
+  setSliderEl('sFri',m.friction);  setSliderEl('sAir',m.airControl);
+  setSliderEl('sJmp',m.jumpPower); setSliderEl('sGrv',m.gravity);
+  setSliderEl('sStep',an.stepDistance); setSliderEl('sLift',an.footLift);
+  // non-slider package fields -> straight into the live mirror
+  P.jumpCut=m.jumpCut; P.maxFall=m.maxFall;
+  P.coyoteFrames=m.coyoteFrames; P.bufferFrames=m.bufferFrames;
+  P.cadence=an.cadence; P.legLen=an.legLen;
+  // animation mode (+ segmented button state)
+  P.animMode=an.mode;
+  document.querySelectorAll('#animMode button').forEach(x=>x.classList.toggle('on', x.dataset.mode===an.mode));
+  // actor body + identity
+  actor.w=pkg.size.w; actor.h=pkg.size.h;
+  document.getElementById('pkgName').textContent=pkg.name;
+}
+
+/* build a package from current live state (for export) */
+function currentPackage(){
+  return {
+    name: activeChar.name,
+    size:   { ...activeChar.size },
+    hitbox: { ...activeChar.hitbox },
+    movement: {
+      runSpeed:P.runSpeed, accel:P.accel, friction:P.friction, airControl:P.airControl,
+      gravity:P.gravity, jumpPower:P.jumpPower, jumpCut:P.jumpCut, maxFall:P.maxFall,
+      coyoteFrames:P.coyoteFrames, bufferFrames:P.bufferFrames
+    },
+    anim: {
+      mode:P.animMode, stepDistance:P.stepDistance, cadence:P.cadence,
+      footLift:P.footLift, legLen:P.legLen
+    }
+  };
+}
+
+/* sanitize an imported object into a valid package: fill gaps from basic, coerce
+   numbers, clamp to the same ranges the sliders enforce. JSON.parse only — no eval. */
+const _clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+const _num=(v,fb)=>{ const n=Number(v); return Number.isFinite(n)?n:fb; };
+function validatePackage(raw){
+  if(!raw || typeof raw!=='object' || Array.isArray(raw)) throw new Error('not a package object');
+  const b=PRESETS.basic, m=raw.movement||{}, an=raw.anim||{}, sz=raw.size||{}, hb=raw.hitbox||{};
+  return {
+    name: (typeof raw.name==='string' && raw.name.trim()) ? raw.name.trim().slice(0,40) : 'imported',
+    size:   { w:_clamp(_num(sz.w,b.size.w),8,128), h:_clamp(_num(sz.h,b.size.h),8,200) },
+    hitbox: { inset:_clamp(_num(hb.inset,b.hitbox.inset),0,20) },
+    movement: {
+      runSpeed:_clamp(_num(m.runSpeed,b.movement.runSpeed),1.5,9),
+      accel:_clamp(_num(m.accel,b.movement.accel),0.1,2),
+      friction:_clamp(_num(m.friction,b.movement.friction),0.5,0.97),
+      airControl:_clamp(_num(m.airControl,b.movement.airControl),0,1),
+      gravity:_clamp(_num(m.gravity,b.movement.gravity),0.2,1.2),
+      jumpPower:_clamp(_num(m.jumpPower,b.movement.jumpPower),6,18),
+      jumpCut:_clamp(_num(m.jumpCut,b.movement.jumpCut),0,1),
+      maxFall:_clamp(_num(m.maxFall,b.movement.maxFall),4,40),
+      coyoteFrames:Math.round(_clamp(_num(m.coyoteFrames,b.movement.coyoteFrames),0,30)),
+      bufferFrames:Math.round(_clamp(_num(m.bufferFrames,b.movement.bufferFrames),0,30))
+    },
+    anim: {
+      mode: an.mode==='time'?'time':'distance',
+      stepDistance:_clamp(_num(an.stepDistance,b.anim.stepDistance),20,90),
+      cadence:_clamp(_num(an.cadence,b.anim.cadence),0.02,0.5),
+      footLift:_clamp(_num(an.footLift,b.anim.footLift),4,34),
+      legLen:_clamp(_num(an.legLen,b.anim.legLen),10,40)
+    }
+  };
+}
+
+const pkgMsg=document.getElementById('pkgMsg');
+function showPkgMsg(text,isError){ pkgMsg.textContent=text; pkgMsg.style.color=isError?'var(--bad)':'var(--good)'; }
+
+document.getElementById('presetSel').addEventListener('change', e=>{
+  const pkg=PRESETS[e.target.value];
+  if(pkg){ applyPackage(pkg); showPkgMsg('loaded preset: '+pkg.name, false); }
 });
 
-document.getElementById('pkgName').textContent = CHARACTER.name;
+document.getElementById('btnExport').addEventListener('click', ()=>{
+  const pkg=currentPackage();
+  const blob=new Blob([JSON.stringify(pkg,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=(pkg.name||'character')+'.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  showPkgMsg('exported '+a.download, false);
+});
+
+const fileImport=document.getElementById('fileImport');
+document.getElementById('btnImport').addEventListener('click', ()=> fileImport.click());
+fileImport.addEventListener('change', e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const clean=validatePackage(JSON.parse(reader.result));
+      applyPackage(clean);
+      showPkgMsg('imported: '+clean.name, false);
+    }catch(err){ showPkgMsg('import failed: '+err.message, true); }
+  };
+  reader.onerror=()=> showPkgMsg('could not read file', true);
+  reader.readAsText(file);
+  e.target.value='';   // allow re-importing the same file
+});
+
+/* DEFAULTS now restores the currently-loaded character (preset or imported) */
+document.getElementById('btnDefaults').addEventListener('click', ()=> applyPackage(activeChar));
+
+document.getElementById('pkgName').textContent = activeChar.name;
 </script>
 </body>
 </html>

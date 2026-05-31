@@ -43,8 +43,30 @@ implements them can host any character.
 - `solidsHit(x, y, w, h) -> solids[]` — full-collision rects overlapping a box.
 - `platformsHit(x, y, w, h) -> platforms[]` — one-way rects overlapping a box.
 
-## Export / import (planned shape)
-- **Export a character:** `package.json` (the shape above) + `atlas.png` + `atlas.json`
-  (frames, trims, baseline/anchor, derived hitbox).
+## Export / import
+
+### In the lab today (implemented)
+- **Built-in library:** the `PRESETS` object in `index.html` holds full packages,
+  embedded so the lab runs offline by double-click. Pick one from the **preset**
+  dropdown. Ships with `basic` (the working baseline) and `greybox_legacy` (the
+  original feel, kept as a reference). `characters/*.json` mirrors these as
+  version-controlled files.
+- **Export:** the **EXPORT .JSON** button serializes the live state (a package of the
+  shape above) and downloads `<name>.json`. Works locally and on the hosted site.
+- **Import:** the **IMPORT .JSON** button opens a file picker, reads the file with
+  `FileReader`, `JSON.parse`s it (never `eval`), then `validatePackage()` fills any
+  missing fields from `basic` and **clamps every value to the slider ranges** before
+  applying. Malformed files are rejected without disturbing the running sim.
+- **Why files, not storage/cloud:** keeps the tool self-contained and offline, with no
+  account or backend and no attack surface. A character is just a small JSON file you
+  can version, hand to a friend, or drop into a game.
+- **`file://` constraint:** characters are never `fetch()`ed at startup (browsers block
+  that on `file://`); built-ins are embedded, external ones arrive via the file picker.
+
+### Still planned
+- **Sprite atlas:** pair the `package.json` with `atlas.png` + `atlas.json` (frames,
+  trims, baseline/anchor, derived hitbox) so a character = package + atlas.
+- **Abilities:** an `abilities` block (e.g. double-jump, dash) — needs matching actor
+  state-machine support, gated by the flags (see CLAUDE.md "Add an ability").
 - **Import into a game:** the game provides an environment that satisfies the contract
   and an actor that reads the package. No character code is rewritten on import.

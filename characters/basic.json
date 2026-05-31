@@ -1,0 +1,29 @@
+{
+  "name": "basic",
+  "size": {
+    "w": 34,
+    "h": 64
+  },
+  "hitbox": {
+    "inset": 4
+  },
+  "movement": {
+    "runSpeed": 4.5,
+    "accel": 0.25,
+    "friction": 0.92,
+    "airControl": 0.8,
+    "gravity": 0.4,
+    "jumpPower": 11,
+    "jumpCut": 0.45,
+    "maxFall": 14,
+    "coyoteFrames": 6,
+    "bufferFrames": 6
+  },
+  "anim": {
+    "mode": "distance",
+    "stepDistance": 40,
+    "cadence": 0.13,
+    "footLift": 8,
+    "legLen": 26
+  }
+}
