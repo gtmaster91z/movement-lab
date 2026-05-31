@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOVEMENT LAB — character test harness</title>
+<style>
+  :root{
+    --bg:#0c1018;
+    --panel:#11161f;
+    --panel-2:#161d28;
+    --line:#1f2a38;
+    --grid:#13202e;
+    --grid-major:#1b3146;
+    --ink:#c7d4e3;
+    --ink-dim:#6b7c91;
+    --ink-faint:#3c4a5c;
+    --accent:#ffb000;          /* warm oscilloscope amber */
+    --accent-dim:#7a5800;
+    --good:#46d6a0;
+    --bad:#ff5d5d;
+    --cyan:#4fb9e0;
+    --mono: ui-monospace,'SF Mono','JetBrains Mono',Menlo,Consolas,'Liberation Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--mono);}
+  body{
+    display:flex;flex-direction:column;min-height:100vh;
+    background-image:
+      linear-gradient(var(--grid) 1px,transparent 1px),
+      linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:22px 22px;
+  }
+  header{
+    display:flex;align-items:baseline;gap:14px;
+    padding:12px 18px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,var(--panel),transparent);
+  }
+  header .mark{
+    font-weight:800;letter-spacing:.22em;font-size:13px;color:var(--accent);
+  }
+  header .sub{font-size:11px;color:var(--ink-dim);letter-spacing:.14em;text-transform:uppercase;}
+  header .spacer{flex:1;}
+  header .pkg{font-size:11px;color:var(--ink-dim);}
+  header .pkg b{color:var(--ink);font-weight:600;}
+  main{flex:1;display:flex;gap:14px;padding:14px;align-items:flex-start;min-height:0;}
+  .stage-wrap{
+    position:relative;flex:1;min-width:0;
+    border:1px solid var(--line);border-radius:6px;overflow:hidden;
+    background:#070b11;
+    box-shadow:0 0 0 1px #000 inset, 0 18px 50px -30px #000;
+  }
+  canvas{display:block;width:100%;height:auto;image-rendering:auto;}
+  .hud{
+    position:absolute;top:10px;left:10px;
+    font-size:11px;line-height:1.55;color:var(--ink);
+    background:rgba(7,11,17,.72);border:1px solid var(--line);
+    border-radius:5px;padding:8px 10px;backdrop-filter:blur(2px);
+    pointer-events:none;min-width:172px;
+  }
+  .hud .row{display:flex;justify-content:space-between;gap:14px;}
+  .hud .k{color:var(--ink-dim);}
+  .hud .v{color:var(--accent);}
+  .hud .v.state{color:var(--cyan);text-transform:uppercase;letter-spacing:.08em;}
+  .legend{
+    position:absolute;bottom:10px;left:10px;right:10px;
+    display:flex;flex-wrap:wrap;gap:6px 14px;font-size:10.5px;color:var(--ink-dim);
+    pointer-events:none;
+  }
+  .legend b{color:var(--ink);font-weight:600;}
+  .legend kbd{
+    color:var(--accent);background:#0009;border:1px solid var(--line);
+    border-radius:3px;padding:0 5px;font-family:var(--mono);font-size:10px;
+  }
+
+  .panel{
+    width:296px;flex:none;display:flex;flex-direction:column;gap:12px;
+    max-height:calc(100vh - 96px);overflow:auto;padding-right:2px;
+  }
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:6px;}
+  .card h3{
+    margin:0;padding:9px 12px;font-size:10.5px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--ink-dim);border-bottom:1px solid var(--line);
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .card h3 .tag{color:var(--accent-dim);font-size:9px;letter-spacing:.1em;}
+  .card .body{padding:11px 12px;display:flex;flex-direction:column;gap:11px;}
+
+  .ctrl{display:flex;flex-direction:column;gap:5px;}
+  .ctrl .lab{display:flex;justify-content:space-between;font-size:11px;}
+  .ctrl .lab .name{color:var(--ink);}
+  .ctrl .lab .num{color:var(--accent);font-variant-numeric:tabular-nums;}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:3px;border-radius:2px;
+    background:linear-gradient(90deg,var(--accent-dim),var(--line));outline:none;margin:2px 0;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:13px;height:13px;border-radius:50%;
+    background:var(--accent);border:2px solid #000;cursor:pointer;box-shadow:0 0 8px -1px var(--accent);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:13px;height:13px;border-radius:50%;background:var(--accent);border:2px solid #000;cursor:pointer;
+  }
+
+  .toggles{display:flex;flex-direction:column;gap:2px;}
+  .tog{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:6px 8px;border-radius:4px;cursor:pointer;font-size:11.5px;user-select:none;
+  }
+  .tog:hover{background:var(--panel-2);}
+  .tog .pill{
+    width:30px;height:16px;border-radius:9px;background:var(--line);position:relative;transition:.15s;flex:none;
+  }
+  .tog .pill::after{
+    content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;
+    background:var(--ink-dim);transition:.15s;
+  }
+  .tog.on .pill{background:var(--accent-dim);}
+  .tog.on .pill::after{left:16px;background:var(--accent);}
+  .tog.on .name{color:var(--ink);}
+  .tog .name{color:var(--ink-dim);}
+
+  .seg{display:flex;border:1px solid var(--line);border-radius:5px;overflow:hidden;}
+  .seg button{
+    flex:1;background:transparent;border:0;color:var(--ink-dim);font-family:var(--mono);
+    font-size:11px;padding:7px 4px;cursor:pointer;letter-spacing:.04em;transition:.12s;
+  }
+  .seg button.on{background:var(--accent);color:#000;font-weight:700;}
+  .note{font-size:10.5px;line-height:1.5;color:var(--ink-dim);}
+  .note b{color:var(--cyan);font-weight:600;}
+  .rowbtns{display:flex;gap:8px;}
+  .btn{
+    flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+    font-family:var(--mono);font-size:11px;padding:8px;border-radius:5px;cursor:pointer;letter-spacing:.05em;
+  }
+  .btn:hover{border-color:var(--accent-dim);color:var(--accent);}
+</style>
+</head>
+<body>
+  <header>
+    <span class="mark">◢ MOVEMENT LAB</span>
+    <span class="sub">character test harness</span>
+    <span class="spacer"></span>
+    <span class="pkg">package: <b id="pkgName">greybox_actor</b> · v0.1</span>
+  </header>
+
+  <main>
+    <div class="stage-wrap">
+      <canvas id="cv" width="960" height="540"></canvas>
+      <div class="hud" id="hud"></div>
+      <div class="legend">
+        <span><kbd>← →</kbd>/<kbd>A D</kbd> <b>move</b></span>
+        <span><kbd>Shift</kbd> <b>run</b></span>
+        <span><kbd>Space</kbd>/<kbd>↑</kbd> <b>jump</b> (hold=higher)</span>
+        <span><kbd>↓</kbd> <b>drop / hang-release</b></span>
+        <span>fall toward an edge to <b>grab a ledge</b></span>
+        <span><kbd>R</kbd> <b>reset</b></span>
+      </div>
+    </div>
+
+    <aside class="panel">
+      <div class="card">
+        <h3>Animation <span class="tag">the smoothness knob</span></h3>
+        <div class="body">
+          <div class="seg" id="animMode">
+            <button data-mode="distance" class="on">DISTANCE-DRIVEN</button>
+            <button data-mode="time">TIME-DRIVEN</button>
+          </div>
+          <p class="note">Watch the <b>foot-plant ticks</b> on the ground. In <b>distance</b> mode the planted foot stays locked to the world — no skating. Flip to <b>time</b> and the feet slide because the stride no longer matches ground speed. This is what made her movement read as choppy.</p>
+          <div class="ctrl">
+            <div class="lab"><span class="name">step distance</span><span class="num" id="vStep">46</span></div>
+            <input type="range" id="sStep" min="20" max="90" step="1" value="46">
+          </div>
+          <div class="ctrl">
+            <div class="lab"><span class="name">foot lift</span><span class="num" id="vLift">16</span></div>
+            <input type="range" id="sLift" min="4" max="34" step="1" value="16">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Movement <span class="tag">feel constants</span></h3>
+        <div class="body">
+          <div class="ctrl">
+            <div class="lab"><span class="name">run speed</span><span class="num" id="vRun">4.2</span></div>
+            <input type="range" id="sRun" min="1.5" max="9" step="0.1" value="4.2">
+          </div>
+          <div class="ctrl">
+            <div class="lab"><span class="name">ground accel</span><span class="num" id="vAcc">0.55</span></div>
+            <input type="range" id="sAcc" min="0.1" max="2" step="0.05" value="0.55">
+          </div>
+          <div class="ctrl">
+            <div class="lab"><span class="name">friction</span><span class="num" id="vFri">0.78</span></div>
+            <input type="range" id="sFri" min="0.5" max="0.97" step="0.01" value="0.78">
+          </div>
+          <div class="ctrl">
+            <div class="lab"><span class="name">air control</span><span class="num" id="vAir">0.32</span></div>
+            <input type="range" id="sAir" min="0" max="1" step="0.02" value="0.32">
+          </div>
+          <div class="ctrl">
+            <div class="lab"><span class="name">jump power</span><span class="num" id="vJmp">11.5</span></div>
+            <input type="range" id="sJmp" min="6" max="18" step="0.5" value="11.5">
+          </div>
+          <div class="ctrl">
+            <div class="lab"><span class="name">gravity</span><span class="num" id="vGrv">0.55</span></div>
+            <input type="range" id="sGrv" min="0.2" max="1.2" step="0.02" value="0.55">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Debug overlays</h3>
+        <div class="body">
+          <div class="toggles" id="toggles">
+            <div class="tog on" data-k="hitbox"><span class="name">hitbox</span><span class="pill"></span></div>
+            <div class="tog on" data-k="plants"><span class="name">foot-plant ticks</span><span class="pill"></span></div>
+            <div class="tog" data-k="probes"><span class="name">contract probes</span><span class="pill"></span></div>
+            <div class="tog" data-k="vel"><span class="name">velocity vector</span><span class="pill"></span></div>
+            <div class="tog" data-k="slowmo"><span class="name">slow-mo (0.35×)</span><span class="pill"></span></div>
+          </div>
+          <div class="rowbtns">
+            <button class="btn" id="btnReset">RESET POS</button>
+            <button class="btn" id="btnDefaults">DEFAULTS</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+<script>
+/* ============================================================================
+   MOVEMENT LAB
+   A standalone harness for testing how a character FEELS and MOVES, decoupled
+   from any one game. Two ideas drive the whole thing:
+
+   1) THE CHARACTER PACKAGE  (see CHARACTER below)
+      A character is data: size, hitbox, movement constants, animation spec.
+      The actor reads ONLY from this package + the environment contract. Swap
+      the package -> different character. Carry the package to another game ->
+      it just works, as long as that game answers the same contract.
+
+   2) THE ENVIRONMENT CONTRACT  (see ENV.query* below)
+      The level never touches the character directly. It only answers questions:
+      "is there ground below me?", "a wall ahead?", "a ledge near?", "am I past
+      the fall line?". Any environment that answers these can host any character.
+   ========================================================================== */
+
+/* ----- THE CHARACTER PACKAGE (the portable, importable thing) -------------- */
+const CHARACTER = {
+  name: "greybox_actor",
+  size:   { w: 34, h: 64 },          // collision box, in world px
+  hitbox: { inset: 4 },              // gameplay hurtbox inset from the visual
+  movement: {
+    runSpeed: 4.2,
+    accel:    0.55,
+    friction: 0.78,                  // per-frame velocity retention when no input
+    airControl: 0.32,                // fraction of ground accel usable midair
+    gravity:  0.55,
+    jumpPower: 11.5,
+    jumpCut:  0.45,                   // velocity kept on early jump release (short hop)
+    maxFall:  14,
+    coyoteFrames: 6,                  // forgiveness: jump shortly after leaving ground
+    bufferFrames: 6                   // forgiveness: jump pressed shortly before landing
+  },
+  anim: {
+    mode: "distance",                 // "distance" | "time"
+    stepDistance: 46,                 // world px traveled per stride (distance mode)
+    cadence: 0.13,                    // gait phase / frame (time mode)
+    footLift: 16,
+    legLen: 26
+  }
+};
+
+/* live-tunable mirror (sliders write here; sim reads here) */
+const P = {
+  runSpeed: CHARACTER.movement.runSpeed,
+  accel:    CHARACTER.movement.accel,
+  friction: CHARACTER.movement.friction,
+  airControl: CHARACTER.movement.airControl,
+  gravity:  CHARACTER.movement.gravity,
+  jumpPower: CHARACTER.movement.jumpPower,
+  jumpCut:  CHARACTER.movement.jumpCut,
+  maxFall:  CHARACTER.movement.maxFall,
+  coyoteFrames: CHARACTER.movement.coyoteFrames,
+  bufferFrames: CHARACTER.movement.bufferFrames,
+  animMode: CHARACTER.anim.mode,
+  stepDistance: CHARACTER.anim.stepDistance,
+  cadence: CHARACTER.anim.cadence,
+  footLift: CHARACTER.anim.footLift,
+  legLen: CHARACTER.anim.legLen
+};
+
+/* ----- THE ENVIRONMENT (greybox: just collision surfaces) ------------------ */
+/* Layout echoes a single-screen stage: a central floor with fall zones off the
+   sides and below, two side platforms, one top platform, and a wall pillar. */
+const ENV = (() => {
+  const W = 960, H = 540;
+  const floorTop = 430;
+  const solids = [
+    // main floor (left edge x=200, right edge x=760) -> ledges at both top corners
+    { x:200, y:floorTop, w:560, h:H-floorTop, kind:"floor" },
+    // a wall pillar on the floor (tests horizontal collision)
+    { x:690, y:330, w:26, h:floorTop-330, kind:"wall" }
+  ];
+  const platforms = [ // one-way, pass-through from below, drop-through with Down
+    { x:230, y:330, w:150, h:14 },
+    { x:580, y:330, w:150, h:14 },
+    { x:405, y:238, w:150, h:14 }
+  ];
+  // grabbable ledges: the two outer top corners of the floor
+  const ledges = [
+    { x:200, y:floorTop, dir: 1 },   // left ledge, climb to the right
+    { x:760, y:floorTop, dir:-1 }    // right ledge, climb to the left
+  ];
+  const fallLine = H + 40;           // below this = blast zone -> respawn
+  const spawn = { x: 470, y: floorTop - 64 };
+
+  /* ---- THE CONTRACT: the only way the character touches the world ---- */
+  function rectsOverlap(ax,ay,aw,ah, b){
+    return ax < b.x+b.w && ax+aw > b.x && ay < b.y+b.h && ay+ah > b.y;
+  }
+  return {
+    W,H,floorTop,solids,platforms,ledges,fallLine,spawn,
+    solidsHit(x,y,w,h){ return solids.filter(s=>rectsOverlap(x,y,w,h,s)); },
+    platformsHit(x,y,w,h){ return platforms.filter(s=>rectsOverlap(x,y,w,h,s)); },
+    queryGround(x,y,w){ // is there a surface directly under the feet?
+      const probe = {x, y:y, w, h:3};
+      const hit = solids.concat(platforms).find(s=>rectsOverlap(probe.x,probe.y,probe.w,probe.h,s));
+      return hit ? hit.y : null;
+    },
+    queryLedge(x,y,w,h,facing,vy){ // near a grabbable ledge while falling toward it?
+      if(vy < 0) return null;
+      for(const L of ledges){
+        if(L.dir !== facing) continue;       // must be facing into the ledge
+        const handX = facing>0 ? x+w : x;     // leading edge of the body
+        const near = Math.abs(handX - L.x) < 16 && (y < L.y) && (y+h > L.y-4) && (y+h < L.y+46);
+        if(near) return L;
+      }
+      return null;
+    },
+    pastFallLine(y){ return y > fallLine; }
+  };
+})();
+
+/* ----- THE ACTOR (reads package + contract, owns its own state machine) ---- */
+const actor = {
+  x:ENV.spawn.x, y:ENV.spawn.y, w:CHARACTER.size.w, h:CHARACTER.size.h,
+  vx:0, vy:0, facing:1, grounded:false, state:"idle",
+  coyote:0, buffer:0, dropTimer:0,
+  hanging:false, hangLedge:null,
+  dist:0, gait:0,                       // dist=horizontal distance walked; gait=phase 0..1
+  plant:[{x:0,planted:false},{x:0,planted:false}],
+  plantTicks:[]                         // persistent world ticks where feet landed
+};
+
+const keys = {};
+const debug = { hitbox:true, plants:true, probes:false, vel:false, slowmo:false };
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+
+/* -------------------------------- INPUT ----------------------------------- */
+const LEFT = ()=> keys['arrowleft']||keys['a'];
+const RIGHT= ()=> keys['arrowright']||keys['d'];
+const RUN  = ()=> keys['shift'];
+const DOWN = ()=> keys['arrowdown']||keys['s'];
+const JUMP = ()=> keys['arrowup']||keys[' ']||keys['w'];
+
+addEventListener('keydown', e=>{
+  const k=e.key.toLowerCase();
+  if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k)) e.preventDefault();
+  if(!keys[k] && (k===' '||k==='arrowup'||k==='w')) actor.buffer = P.bufferFrames; // edge -> buffer
+  keys[k]=true;
+  if(k==='r') resetPos();
+});
+addEventListener('keyup', e=>{
+  const k=e.key.toLowerCase();
+  keys[k]=false;
+  if((k===' '||k==='arrowup'||k==='w') && actor.vy<0) actor.vy*=P.jumpCut; // variable height
+});
+
+function resetPos(){
+  actor.x=ENV.spawn.x; actor.y=ENV.spawn.y; actor.vx=0; actor.vy=0;
+  actor.hanging=false; actor.hangLedge=null; actor.plantTicks=[]; actor.dist=0; actor.gait=0;
+}
+
+/* ------------------------------- PHYSICS ---------------------------------- */
+function collideX(a){
+  a.x += a.vx;
+  for(const s of ENV.solidsHit(a.x,a.y,a.w,a.h)){
+    if(a.vx>0) a.x = s.x - a.w;        // hit left face of solid
+    else if(a.vx<0) a.x = s.x + s.w;   // hit right face
+    a.vx = 0;
+  }
+}
+function collideY(a){
+  const prevBottom = a.y + a.h;
+  a.y += a.vy;
+  a.grounded=false;
+  // solids (full collision)
+  for(const s of ENV.solidsHit(a.x,a.y,a.w,a.h)){
+    if(a.vy>0){ a.y = s.y - a.h; a.grounded=true; }
+    else if(a.vy<0){ a.y = s.y + s.h; }
+    a.vy=0;
+  }
+  // one-way platforms: only land when descending AND feet were above last frame
+  if(a.dropTimer<=0){
+    for(const p of ENV.platformsHit(a.x,a.y,a.w,a.h)){
+      if(a.vy>0 && prevBottom <= p.y+2){ a.y = p.y - a.h; a.vy=0; a.grounded=true; }
+    }
+  }
+}
+
+function stepSim(){
+  const a = actor;
+
+  // ----- HANGING on a ledge (a distinct state) -----
+  if(a.hanging){
+    a.vx=0; a.vy=0;
+    if(JUMP()){ a.hanging=false; a.vy = -P.jumpPower; }            // climb-jump off
+    else if(DOWN()){ a.hanging=false; a.vy = 1; a.dropTimer=10; }  // let go
+    a.state="hang";
+    settleAnim(a,0);
+    return;
+  }
+
+  // ----- drop through a one-way platform with Down -----
+  if(a.grounded && DOWN() && onOneWay(a)){ a.dropTimer=8; a.grounded=false; a.y+=1; }
+
+  // ----- horizontal intent -----
+  const dir = (RIGHT()?1:0) - (LEFT()?1:0);
+  const top = P.runSpeed * (RUN()?1: 0.55);   // walk = 55% of run
+  const acc = a.grounded ? P.accel : P.accel*P.airControl;
+  if(dir!==0){
+    a.vx += dir*acc;
+    if(Math.abs(a.vx) > top) a.vx = dir*top;
+    a.facing = dir;
+  } else if(a.grounded){
+    a.vx *= P.friction;
+    if(Math.abs(a.vx)<0.05) a.vx=0;
+  }
+
+  // ----- jump (with coyote + buffer forgiveness) -----
+  if(a.grounded) a.coyote = P.coyoteFrames; else if(a.coyote>0) a.coyote--;
+  if(a.buffer>0) a.buffer--;
+  if(a.buffer>0 && (a.grounded || a.coyote>0)){
+    a.vy = -P.jumpPower; a.grounded=false; a.coyote=0; a.buffer=0;
+  }
+
+  // ----- gravity -----
+  a.vy += P.gravity;
+  if(a.vy > P.maxFall) a.vy = P.maxFall;
+  if(a.dropTimer>0) a.dropTimer--;
+
+  // ----- ledge grab check (uses the contract) -----
+  if(!a.grounded){
+    const L = ENV.queryLedge(a.x,a.y,a.w,a.h,a.facing,a.vy);
+    if(L && a.dropTimer<=0){
+      a.hanging=true; a.hangLedge=L;
+      a.y = L.y - a.h*0.45;
+      a.x = L.dir>0 ? L.x - a.w : L.x;
+      return;
+    }
+  }
+
+  // ----- resolve movement axis-separated -----
+  const before = a.x;
+  collideX(a);
+  collideY(a);
+
+  // respawn if past the blast zone
+  if(ENV.pastFallLine(a.y)) resetPos();
+
+  // ----- state for readout -----
+  if(!a.grounded) a.state = a.vy<0 ? "jump" : "fall";
+  else if(Math.abs(a.vx)>P.runSpeed*0.5*0.9) a.state = RUN()&&dir!==0 ? "run":"walk";
+  else if(Math.abs(a.vx)>0.1) a.state="walk";
+  else a.state="idle";
+
+  settleAnim(a, Math.abs(a.x - before));
+}
+
+/* ----------------------- ANIMATION (the headline) -------------------------
+   Plant-locked gait. Each foot alternates stance/swing. During STANCE the foot
+   is pinned to a world point (it does NOT move with the body) -> zero skate.
+   The only difference between the two modes is what advances the gait phase:
+     distance-driven : phase advances with ground distance  -> feet match speed
+     time-driven     : phase advances on a fixed clock       -> feet skate
+---------------------------------------------------------------------------- */
+function settleAnim(a, movedAbs){
+  const moving = a.grounded && Math.abs(a.vx) > 0.15;
+  if(moving) a.dist += movedAbs;
+
+  if(P.animMode==="distance"){
+    a.gait = (a.dist / (P.stepDistance*2)) % 1;
+  } else {
+    if(moving) a.gait = (a.gait + P.cadence) % 1;
+  }
+
+  // record plant ticks: when each foot crosses into stance, drop a world tick
+  const feet = footWorld(a);
+  for(let i=0;i<2;i++){
+    const f=feet[i];
+    if(f.stance && !a.plant[i].planted){
+      a.plant[i].planted=true; a.plant[i].x=f.x;
+      if(moving){ a.plantTicks.push({x:f.x, y:groundUnder(a), foot:i, age:0}); }
+    } else if(!f.stance){
+      a.plant[i].planted=false;
+    }
+  }
+  // age out ticks
+  for(const t of a.plantTicks) t.age++;
+  a.plantTicks = a.plantTicks.filter(t=>t.age<120).slice(-40);
+}
+
+function groundUnder(a){
+  const g = ENV.queryGround(a.x, a.y+a.h, a.w);
+  return g!=null ? g : a.y+a.h;
+}
+
+/* standing on a one-way platform (and not on a solid) -> eligible to drop through */
+function onOneWay(a){
+  const feetY=a.y+a.h;
+  const onPlat = ENV.platforms.some(p=> a.x < p.x+p.w && a.x+a.w > p.x && Math.abs(feetY-p.y)<2);
+  const onSolid= ENV.solids.some(s=> a.x < s.x+s.w && a.x+a.w > s.x && Math.abs(feetY-s.y)<2);
+  return onPlat && !onSolid;
+}
+
+/* compute each foot's world position + stance flag from the gait phase */
+function footWorld(a){
+  const cx = a.x + a.w/2;
+  const footY0 = a.y + a.h;
+  const stride = P.stepDistance;
+  const out=[];
+  for(let i=0;i<2;i++){
+    const ph = (a.gait + i*0.5) % 1;
+    const stance = ph < 0.5;             // first half of cycle = planted
+    let fx, lift;
+    if(stance){
+      // pinned: anchor under the body offset slightly back-to-front by phase
+      const t = ph/0.5;                   // 0..1 across stance
+      const anchor = a.plant[i].planted ? a.plant[i].x
+                     : cx + a.facing*(stride*0.5);
+      fx = anchor;                        // FIXED in world space -> no skate
+      lift = 0;
+      void t;
+    } else {
+      const t = (ph-0.5)/0.5;             // 0..1 across swing
+      const from = a.plant[i].x || cx;
+      const to   = cx + a.facing*(stride*0.5);
+      fx = from + (to-from)*ease(t);
+      lift = Math.sin(t*Math.PI)*P.footLift;
+    }
+    out.push({x:fx, y:footY0 - lift, stance, lift});
+  }
+  return out;
+}
+const ease=t=> t*t*(3-2*t);
+
+/* -------------------------------- RENDER ---------------------------------- */
+function draw(){
+  ctx.clearRect(0,0,ENV.W,ENV.H);
+  drawBackdrop();
+
+  // platforms (one-way)
+  for(const p of ENV.platforms) drawSurface(p.x,p.y,p.w,p.h,true);
+  // solids
+  for(const s of ENV.solids) drawSurface(s.x,s.y,s.w,s.h,false);
+  // ledges
+  for(const L of ENV.ledges) drawLedge(L);
+  // fall line marker
+  drawFallZone();
+
+  if(debug.plants) drawPlantTicks();
+  drawActor(actor);
+  if(debug.probes) drawProbes(actor);
+  if(debug.vel) drawVel(actor);
+
+  updateHUD();
+}
+
+function drawBackdrop(){
+  // faint measurement grid (blast-zone diagram vibe)
+  ctx.save();
+  ctx.strokeStyle="rgba(40,70,100,.16)"; ctx.lineWidth=1;
+  for(let x=0;x<=ENV.W;x+=48){ ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,ENV.H);ctx.stroke(); }
+  for(let y=0;y<=ENV.H;y+=48){ ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(ENV.W,y);ctx.stroke(); }
+  // center axis
+  ctx.strokeStyle="rgba(80,200,120,.18)";
+  ctx.beginPath();ctx.moveTo(ENV.W/2,0);ctx.lineTo(ENV.W/2,ENV.H);ctx.stroke();
+  ctx.restore();
+}
+
+function drawSurface(x,y,w,h,oneway){
+  ctx.fillStyle = oneway ? "rgba(120,140,165,.16)" : "rgba(120,140,165,.10)";
+  ctx.fillRect(x,y,w,h);
+  ctx.strokeStyle = oneway ? "rgba(180,200,225,.55)" : "rgba(150,175,205,.7)";
+  ctx.lineWidth = oneway ? 2 : 1.5;
+  ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+w,y); ctx.stroke();   // top edge (the standable line)
+  if(!oneway){ ctx.strokeRect(x+.5,y+.5,w-1,h-1); }
+  if(oneway){ // dashed underside hint = pass-through
+    ctx.strokeStyle="rgba(180,200,225,.2)"; ctx.setLineDash([5,5]);
+    ctx.beginPath(); ctx.moveTo(x,y+h); ctx.lineTo(x+w,y+h); ctx.stroke(); ctx.setLineDash([]);
+  }
+}
+
+function drawLedge(L){
+  ctx.save();
+  ctx.fillStyle="#ffb000";
+  ctx.globalAlpha=.9;
+  ctx.beginPath(); ctx.arc(L.x, L.y, 4, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha=.35;
+  ctx.beginPath(); ctx.arc(L.x, L.y, 9, 0, Math.PI*2); ctx.stroke();
+  ctx.strokeStyle="#ffb000"; ctx.stroke();
+  ctx.restore();
+}
+
+function drawFallZone(){
+  ctx.save();
+  ctx.fillStyle="rgba(255,93,93,.05)";
+  ctx.fillRect(0,ENV.H-6,ENV.W,6);
+  ctx.strokeStyle="rgba(255,93,93,.45)"; ctx.setLineDash([10,7]); ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(0,ENV.H-3); ctx.lineTo(ENV.W,ENV.H-3); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle="rgba(255,93,93,.5)"; ctx.font="10px ui-monospace,monospace";
+  ctx.fillText("BLAST ZONE — fall here to respawn", 12, ENV.H-9);
+  ctx.restore();
+}
+
+function drawPlantTicks(){
+  for(const t of actor.plantTicks){
+    const a = Math.max(0, 1 - t.age/120);
+    ctx.save();
+    ctx.globalAlpha = a*0.9;
+    ctx.strokeStyle = t.foot===0 ? "#ffb000" : "#4fb9e0";
+    ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(t.x, t.y-1); ctx.lineTo(t.x, t.y-7); ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawActor(a){
+  const cx=a.x+a.w/2, top=a.y, footY=a.y+a.h;
+  const hipY = footY - P.legLen;
+  const feet = footWorld(a);
+
+  // legs (drawn to the plant-locked feet)
+  ctx.strokeStyle="#dfe8f2"; ctx.lineWidth=4; ctx.lineCap="round";
+  for(let i=0;i<2;i++){
+    const f=feet[i];
+    ctx.strokeStyle = i===0 ? "#e9eef5" : "#aebccd";
+    ctx.beginPath();
+    ctx.moveTo(cx, hipY);
+    // simple knee bend toward the foot
+    const kneeX=(cx+f.x)/2 + a.facing*3, kneeY=hipY+(f.y-hipY)*0.5;
+    ctx.quadraticCurveTo(kneeX,kneeY, f.x, f.y);
+    ctx.stroke();
+  }
+
+  // arms (swing opposite to legs) - only when moving
+  const moving = a.grounded && Math.abs(a.vx)>0.15;
+  const armSwing = moving ? Math.sin(a.gait*Math.PI*2)*10 : (a.state==="idle"?Math.sin(perf()/520)*2:0);
+  ctx.strokeStyle="#c7d4e3"; ctx.lineWidth=3.5;
+  const shY = top + 22;
+  ctx.beginPath(); ctx.moveTo(cx, shY); ctx.lineTo(cx - a.facing*2 + armSwing, shY+18); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, shY); ctx.lineTo(cx + a.facing*2 - armSwing, shY+18); ctx.stroke();
+
+  // torso (greybox capsule)
+  const bw=a.w-6, bx=cx-bw/2, by=top+12, bh=hipY-by;
+  ctx.fillStyle="#26384c"; ctx.strokeStyle="#6f93b6"; ctx.lineWidth=2;
+  roundRect(bx,by,bw,bh,7); ctx.fill(); ctx.stroke();
+
+  // head
+  ctx.fillStyle="#2c405a";
+  ctx.beginPath(); ctx.arc(cx, top+10, 9, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle="#6f93b6"; ctx.stroke();
+  // facing nub
+  ctx.fillStyle="#ffb000";
+  ctx.beginPath(); ctx.arc(cx + a.facing*5, top+9, 2, 0, Math.PI*2); ctx.fill();
+
+  // hitbox overlay
+  if(debug.hitbox){
+    const ins=CHARACTER.hitbox.inset;
+    ctx.strokeStyle="rgba(70,214,160,.8)"; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+    ctx.strokeRect(a.x+ins+.5, a.y+ins+.5, a.w-ins*2-1, a.h-ins*2-1);
+    ctx.setLineDash([]);
+  }
+}
+
+function drawProbes(a){
+  // visualize the contract queries
+  ctx.save();
+  ctx.strokeStyle="rgba(79,185,224,.8)"; ctx.lineWidth=1.5;
+  // ground probe
+  ctx.strokeRect(a.x+.5, a.y+a.h+.5, a.w-1, 3);
+  // ahead probe
+  const ax = a.facing>0? a.x+a.w : a.x-6;
+  ctx.strokeStyle="rgba(255,176,0,.8)";
+  ctx.strokeRect(ax+.5, a.y+8.5, 6, a.h-16);
+  ctx.restore();
+}
+
+function drawVel(a){
+  const cx=a.x+a.w/2, cy=a.y+a.h/2;
+  ctx.save();
+  ctx.strokeStyle="#46d6a0"; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+a.vx*8, cy+a.vy*8); ctx.stroke();
+  ctx.fillStyle="#46d6a0";
+  ctx.beginPath(); ctx.arc(cx+a.vx*8, cy+a.vy*8, 3,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+/* --------------------------------- HUD ------------------------------------ */
+const hud=document.getElementById('hud');
+function updateHUD(){
+  const a=actor;
+  const rows=[
+    ["state", a.state, "state"],
+    ["grounded", a.grounded?"yes":"no"],
+    ["facing", a.facing>0?"→":"←"],
+    ["vx", a.vx.toFixed(2)],
+    ["vy", a.vy.toFixed(2)],
+    ["dist", Math.round(a.dist)],
+    ["gait φ", a.gait.toFixed(2)],
+    ["coyote", a.coyote],
+    ["buffer", a.buffer],
+    ["anim", P.animMode],
+    ["fps", fps.toFixed(0)]
+  ];
+  hud.innerHTML = rows.map(r=>
+    `<div class="row"><span class="k">${r[0]}</span><span class="v ${r[2]||''}">${r[1]}</span></div>`
+  ).join('');
+}
+
+/* -------------------------------- LOOP ------------------------------------ */
+let last=performance.now(), fps=60, _acc=0, _t0=performance.now();
+function perf(){ return performance.now()-_t0; }
+function frame(now){
+  const dt=now-last; last=now;
+  fps = fps*0.9 + (1000/Math.max(dt,1))*0.1;
+  const steps = debug.slowmo ? (Math.random()<0.35?1:0) : 1; // crude slow-mo
+  for(let i=0;i<steps;i++) stepSim();
+  draw();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ------------------------------- CONTROLS --------------------------------- */
+function bindSlider(id, valId, key, fmt){
+  const s=document.getElementById(id), v=document.getElementById(valId);
+  const sync=()=>{ P[key]=parseFloat(s.value); v.textContent= fmt? fmt(P[key]):s.value; };
+  s.addEventListener('input', sync); sync();
+}
+bindSlider('sStep','vStep','stepDistance');
+bindSlider('sLift','vLift','footLift');
+bindSlider('sRun','vRun','runSpeed', x=>x.toFixed(1));
+bindSlider('sAcc','vAcc','accel', x=>x.toFixed(2));
+bindSlider('sFri','vFri','friction', x=>x.toFixed(2));
+bindSlider('sAir','vAir','airControl', x=>x.toFixed(2));
+bindSlider('sJmp','vJmp','jumpPower', x=>x.toFixed(1));
+bindSlider('sGrv','vGrv','gravity', x=>x.toFixed(2));
+
+document.querySelectorAll('#animMode button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('#animMode button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); P.animMode=b.dataset.mode;
+  });
+});
+
+document.querySelectorAll('#toggles .tog').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    const k=t.dataset.k; debug[k]=!debug[k]; t.classList.toggle('on', debug[k]);
+  });
+});
+
+document.getElementById('btnReset').addEventListener('click', resetPos);
+document.getElementById('btnDefaults').addEventListener('click', ()=>{
+  const m=CHARACTER.movement, an=CHARACTER.anim;
+  const set=(id,val)=>{ const e=document.getElementById(id); e.value=val; e.dispatchEvent(new Event('input')); };
+  set('sRun',m.runSpeed); set('sAcc',m.accel); set('sFri',m.friction); set('sAir',m.airControl);
+  set('sJmp',m.jumpPower); set('sGrv',m.gravity); set('sStep',an.stepDistance); set('sLift',an.footLift);
+});
+
+document.getElementById('pkgName').textContent = CHARACTER.name;
+</script>
+</body>
+</html>
